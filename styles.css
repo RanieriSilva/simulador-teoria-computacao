@@ -1,0 +1,260 @@
+/* --- ESTILOS (CSS) --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    padding-top: 30px;
+    color: #333;
+    padding-bottom: 50px;
+}
+
+.container {
+    background-color: white;
+    width: 700px;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+h2 {
+    font-size: 1.2rem;
+    color: #2980b9;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.step-container {
+    display: none; /* Escondido por padrão */
+    animation: fadeIn 0.5s;
+}
+
+.step-container.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.section-title {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #7f8c8d;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+input[type="number"], select, input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    background-color: white;
+}
+
+.row-form {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.row-form > div {
+    flex: 1;
+}
+
+/* Estilos para Checkboxes (Passo 1) */
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.checkbox-item {
+    background-color: #ecf0f1;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    font-size: 0.9rem;
+}
+
+.checkbox-item input {
+    margin-right: 8px;
+}
+
+/* Estilos para Seleção de Funções (Passo 2) */
+.registro-config-row {
+    background-color: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.registro-label {
+    font-weight: bold;
+    color: #e67e22;
+    font-size: 1.1rem;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.select-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Botões */
+.btn-action {
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    width: 100%;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+    font-weight: bold;
+}
+
+.btn-action:hover {
+    background-color: #2ecc71;
+}
+
+.btn-add-inst {
+    background-color: #3498db;
+    margin-top: 0;
+    padding: 10px 15px;
+}
+
+.btn-add-inst:hover {
+    background-color: #5dade2;
+}
+
+.btn-secondary {
+    background-color: #95a5a6;
+    margin-top: 10px;
+}
+.btn-secondary:hover {
+    background-color: #7f8c8d;
+}
+
+/* Área de Programa (Passo 3) e Trace (Passo 4) */
+#program-list, #computation-trace {
+    list-style: none;
+    padding: 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    min-height: 100px;
+    margin-bottom: 20px;
+}
+#program-list li, #computation-trace li {
+    padding: 10px 15px;
+    border-bottom: 1px dashed #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Courier New', Courier, monospace;
+}
+#program-list li:last-child, #computation-trace li:last-child {
+    border-bottom: none;
+}
+.inst-label {
+    font-weight: bold;
+    color: #e67e22;
+    margin-right: 10px;
+}
+.btn-remove {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.inst-error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+/* Área de Resultado Final */
+#resultado-final {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border: 2px solid #34495e;
+}
+
+#final-memory-output {
+    margin-top: 10px;
+    padding: 15px;
+    background-color: #e9ecef;
+    color: #333;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+.memory-state {
+    color: #3498db;
+    font-weight: bold;
+}
+
+.error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    display: none;
+    margin-top: 5px;
+}
+
+.input-reg-values {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.input-reg-values > div {
+    flex: 1;
+    min-width: 100px;
+}
