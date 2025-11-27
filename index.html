@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Máquina - Teoria da Computação</title>
+    <style>
+        /* --- ESTILOS (CSS) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            padding-top: 30px;
+            color: #333;
+            padding-bottom: 50px;
+        }
+
+        .container {
+            background-color: white;
+            width: 700px;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: #2980b9;
+            margin-top: 0;
+        }
+
+        .step-container {
+            display: none; /* Escondido por padrão */
+            animation: fadeIn 0.5s;
+        }
+
+        .step-container.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .section-title {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        /* Estilos para Checkboxes (Passo 1) */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            background-color: #ecf0f1;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            user-select: none;
+            font-size: 0.9rem;
+        }
+
+        .checkbox-item input {
+            margin-right: 8px;
+        }
+
+        .checkbox-item:hover {
+            background-color: #d5dbdb;
+        }
+
+        /* Estilos para Seleção de Funções (Passo 2) */
+        .registro-config-row {
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .registro-label {
+            font-weight: bold;
+            color: #e67e22;
+            font-size: 1.1rem;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .select-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #bdc3c7;
+            background-color: white;
+        }
+
+        /* Botões */
+        .btn-action {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            width: 100%;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-action:hover {
+            background-color: #2ecc71;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        /* Área de Resultado Final */
+        #resultado-final {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            border: 2px solid #34495e;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            display: none;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Definição da Máquina</h1>
+
+        <!-- PASSO 1: Configuração Básica -->
+        <div id="step-1" class="step-container active">
+            <h2>Passo 1: Estrutura e Registradores</h2>
+            
+            <div class="form-group">
+                <label for="qtdRegistradores">Quantidade de Registradores (1-16):</label>
+                <input type="number" id="qtdRegistradores" min="1" max="16" placeholder="Ex: 2">
+                <div id="error-qtd" class="error">Por favor, insira um valor entre 1 e 16.</div>
+            </div>
+
+            <div id="area-selecao-regs" style="display: none;">
+                <div class="section-title">Registradores de Entrada</div>
+                <div class="checkbox-group" id="container-entrada"></div>
+
+                <div class="section-title">Registradores de Saída</div>
+                <div class="checkbox-group" id="container-saida"></div>
+
+                <button class="btn-action" onclick="irParaPasso2()">Próximo: Definir Operações</button>
+            </div>
+        </div>
+
+        <!-- PASSO 2: Operações e Testes -->
+        <div id="step-2" class="step-container">
+            <h2>Passo 2: Funções e Testes</h2>
+            <p style="font-size: 0.9rem; color: #666;">Defina a operação matemática e o teste lógico para cada registrador.</p>
+            
+            <div id="container-funcoes">
+                <!-- Linhas geradas dinamicamente -->
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-action btn-secondary" onclick="voltarParaPasso1()" style="width: 30%;">Voltar</button>
+                <button class="btn-action" onclick="gerarMaquinaFinal()">Gerar Máquina</button>
+            </div>
+        </div>
+
+        <!-- RESULTADO FINAL -->
+        <div id="step-result" class="step-container">
+            <h2>Máquina Definida</h2>
+            <p>Abaixo está a representação textual formal da sua máquina:</p>
+            <div id="resultado-final"></div>
+            <button class="btn-action" onclick="location.reload()">Criar Nova Máquina</button>
+        </div>
+
+    </div>
+
+    <script>
+        /* --- VARIÁVEIS GLOBAIS --- */
+        let maquinaConfig = {
+            qtd: 0,
+            entrada: [],
+            saida: [],
+            operacoes: {}, // { 'A': 'soma', ... }
+            testes: {}     // { 'A': 'zero', ... }
+        };
+
+        /* --- ELEMENTOS DOM --- */
+        const step1 = document.getElementById('step-1');
+        const step2 = document.getElementById('step-2');
+        const stepResult = document.getElementById('step-result');
+        const inputQtd = document.getElementById('qtdRegistradores');
+        
+        /* --- PASSO 1 LOGICA --- */
+        inputQtd.addEventListener('input', function() {
+            const qtd = parseInt(this.value);
+            const errorDiv = document.getElementById('error-qtd');
+            const areaSelecao = document.getElementById('area-selecao-regs');
+
+            if (isNaN(qtd) || qtd < 1 || qtd > 16) {
+                errorDiv.style.display = 'block';
+                areaSelecao.style.display = 'none';
+            } else {
+                errorDiv.style.display = 'none';
+                areaSelecao.style.display = 'block';
+                gerarCheckboxes(qtd);
+            }
+        });
+
+        function gerarCheckboxes(qtd) {
+            const containerEntrada = document.getElementById('container-entrada');
+            const containerSaida = document.getElementById('container-saida');
+            containerEntrada.innerHTML = '';
+            containerSaida.innerHTML = '';
+
+            for (let i = 0; i < qtd; i++) {
+                const letra = String.fromCharCode(65 + i);
+                containerEntrada.appendChild(criarCheckbox(letra, 'entrada'));
+                containerSaida.appendChild(criarCheckbox(letra, 'saida'));
+            }
+        }
+
+        function criarCheckbox(letra, grupo) {
+            const label = document.createElement('label');
+            label.className = 'checkbox-item';
+            label.innerHTML = `<input type="checkbox" name="${grupo}" value="${letra}"> Reg. ${letra}`;
+            return label;
+        }
+
+        function irParaPasso2() {
+            const qtd = parseInt(inputQtd.value);
+            const entradas = Array.from(document.querySelectorAll('input[name="entrada"]:checked')).map(cb => cb.value);
+            const saidas = Array.from(document.querySelectorAll('input[name="saida"]:checked')).map(cb => cb.value);
+
+            // Salva no objeto global
+            maquinaConfig.qtd = qtd;
+            maquinaConfig.entrada = entradas;
+            maquinaConfig.saida = saidas;
+
+            // Gera interface do passo 2
+            gerarInterfaceFuncoes(qtd);
+
+            // Troca de tela
+            step1.classList.remove('active');
+            step2.classList.add('active');
+        }
+
+        /* --- PASSO 2 LOGICA --- */
+        
+        const OPCOES_OPERACOES = [
+            { val: 'add', text: 'Soma (+)' },
+            { val: 'sub', text: 'Subtração (-)' },
+            { val: 'mult', text: 'Multiplicação (*)' },
+            { val: 'div', text: 'Divisão (/)' },
+            { val: 'mod', text: 'Módulo (%)' },
+            { val: 'inc', text: 'Incremento (++)' },
+            { val: 'dec', text: 'Decremento (--)' }
+        ];
+
+        const OPCOES_TESTES = [
+            { val: 'zero', text: 'Igual a 0 (= 0)' },
+            { val: 'gt0', text: 'Maior que 0 (> 0)' },
+            { val: 'lt0', text: 'Menor que 0 (< 0)' },
+            { val: 'gte0', text: 'Maior ou Igual a 0 (>= 0)' },
+            { val: 'lte0', text: 'Menor ou Igual a 0 (<= 0)' },
+            { val: 'neq0', text: 'Diferente de 0 (!= 0)' }
+        ];
+
+        function gerarInterfaceFuncoes(qtd) {
+            const container = document.getElementById('container-funcoes');
+            container.innerHTML = '';
+
+            for (let i = 0; i < qtd; i++) {
+                const letra = String.fromCharCode(65 + i);
+                
+                const row = document.createElement('div');
+                row.className = 'registro-config-row';
+
+                // Label
+                const label = document.createElement('div');
+                label.className = 'registro-label';
+                label.innerText = `Registrador ${letra}`;
+                row.appendChild(label);
+
+                // Select Operação
+                const groupOp = document.createElement('div');
+                groupOp.className = 'select-group';
+                const labelOp = document.createElement('label');
+                labelOp.innerText = "Operação:";
+                const selOp = document.createElement('select');
+                selOp.id = `op_${letra}`;
+                OPCOES_OPERACOES.forEach(opt => {
+                    selOp.innerHTML += `<option value="${opt.val}">${opt.text}</option>`;
+                });
+                groupOp.appendChild(labelOp);
+                groupOp.appendChild(selOp);
+                row.appendChild(groupOp);
+
+                // Select Teste
+                const groupTest = document.createElement('div');
+                groupTest.className = 'select-group';
+                const labelTest = document.createElement('label');
+                labelTest.innerText = "Teste Lógico:";
+                const selTest = document.createElement('select');
+                selTest.id = `test_${letra}`;
+                OPCOES_TESTES.forEach(opt => {
+                    selTest.innerHTML += `<option value="${opt.val}">${opt.text}</option>`;
+                });
+                groupTest.appendChild(labelTest);
+                groupTest.appendChild(selTest);
+                row.appendChild(groupTest);
+
+                container.appendChild(row);
+            }
+        }
+
+        function voltarParaPasso1() {
+            step2.classList.remove('active');
+            step1.classList.add('active');
+        }
+
+        function gerarMaquinaFinal() {
+            // Captura as seleções
+            for (let i = 0; i < maquinaConfig.qtd; i++) {
+                const letra = String.fromCharCode(65 + i);
+                const op = document.getElementById(`op_${letra}`).value;
+                const test = document.getElementById(`test_${letra}`).value;
+                
+                // Mapeia valores 'clean' para nomes matemáticos para o texto final
+                maquinaConfig.operacoes[letra] = mapearNomeOperacao(op, letra);
+                maquinaConfig.testes[letra] = mapearNomeTeste(test, letra);
+            }
+
+            const textoFinal = construirTextoFormal();
+            
+            document.getElementById('resultado-final').innerText = textoFinal;
+            
+            step2.classList.remove('active');
+            stepResult.classList.add('active');
+        }
+
+        /* --- HELPER FUNCTIONS PARA O TEXTO --- */
+
+        function mapearNomeOperacao(op, reg) {
+            // Retorna nomes como 'adiciona_a', 'subtrai_b' baseados na seleção
+            switch(op) {
+                case 'add': return `adiciona_${reg.toLowerCase()}`;
+                case 'sub': return `subtrai_${reg.toLowerCase()}`;
+                case 'mult': return `multiplica_${reg.toLowerCase()}`;
+                case 'div': return `divide_${reg.toLowerCase()}`;
+                case 'mod': return `mod_${reg.toLowerCase()}`;
+                case 'inc': return `inc_${reg.toLowerCase()}`;
+                case 'dec': return `dec_${reg.toLowerCase()}`;
+                default: return `op_${reg.toLowerCase()}`;
+            }
+        }
+
+        function mapearNomeTeste(test, reg) {
+            switch(test) {
+                case 'zero': return `${reg.toLowerCase()}_zero`;
+                case 'gt0': return `${reg.toLowerCase()}_maior_zero`;
+                case 'lt0': return `${reg.toLowerCase()}_menor_zero`;
+                case 'neq0': return `${reg.toLowerCase()}_dif_zero`;
+                default: return `teste_${reg.toLowerCase()}`;
+            }
+        }
+
+        function construirTextoFormal() {
+            const qtd = maquinaConfig.qtd;
+            const regsEntrada = maquinaConfig.entrada.length;
+            const regsSaida = maquinaConfig.saida.length;
+            
+            // Listas de funções para a tupla principal
+            const listaOps = [];
+            const listaTestes = [];
+            
+            for(let i=0; i<qtd; i++) {
+                let l = String.fromCharCode(65+i);
+                listaOps.push(maquinaConfig.operacoes[l]);
+                listaTestes.push(maquinaConfig.testes[l]);
+            }
+
+            // Montagem do Texto
+            let txt = `maquina_${qtd}regs = (N^${qtd}, N^${regsEntrada || 0}, N^${regsSaida || 0}, entrada_func, saida_func, (${listaOps.join(', ')}), (${listaTestes.join(', ')}))\n\n`;
+            
+            txt += `ONDE:\n`;
+            txt += `\tN^${qtd} é o conjunto de valores de memória (registradores A..${String.fromCharCode(64+qtd)})\n`;
+            txt += `\tN^${regsEntrada} é o conjunto de valores de entrada (${maquinaConfig.entrada.join(',')})\n`;
+            txt += `\tN^${regsSaida} é o conjunto de valores de saída (${maquinaConfig.saida.join(',')})\n\n`;
+
+            txt += `DEFINIÇÕES DE ENTRADA E SAÍDA:\n`;
+            // Descrição genérica da entrada
+            if (regsEntrada > 0) {
+                const varsEntrada = maquinaConfig.entrada.map(r => r.toLowerCase()).join(',');
+                const tuplaMemoria = Array.from({length: qtd}, (_, i) => {
+                    let l = String.fromCharCode(65+i);
+                    return maquinaConfig.entrada.includes(l) ? l.toLowerCase() : '0';
+                }).join(',');
+                
+                txt += `\tentrada_func: N^${regsEntrada} -> N^${qtd}\n`;
+                txt += `\tentrada_func(${varsEntrada}) = (${tuplaMemoria})\n\n`;
+            } else {
+                txt += `\tentrada_func: N/A (Sem registradores de entrada definidos)\n\n`;
+            }
+
+            // Descrição genérica da saída
+            if (regsSaida > 0) {
+                // Criar variáveis n1, n2... para representar a memória
+                const varsMemoria = Array.from({length: qtd}, (_, i) => `n${i+1}`).join(',');
+                // Mapear quais dessas variáveis são saída
+                const varsSaida = maquinaConfig.saida.map(r => {
+                    let index = r.charCodeAt(0) - 65;
+                    return `n${index+1}`;
+                }).join(',');
+
+                txt += `\tsaida_func: N^${qtd} -> N^${regsSaida}\n`;
+                txt += `\tsaida_func(${varsMemoria}) = (${varsSaida})\n\n`;
+            } else {
+                txt += `\tsaida_func: N/A (Sem registradores de saída definidos)\n\n`;
+            }
+
+            txt += `INTERPRETAÇÕES (EXEMPLOS):\n`;
+            // Exibe a definição matemática para o primeiro registrador como exemplo
+            const rExemplo = 'A';
+            if (qtd > 0) {
+                const opNome = maquinaConfig.operacoes['A'];
+                const testeNome = maquinaConfig.testes['A'];
+                
+                // Exemplo Operação
+                txt += `\t${opNome}: N^${qtd} -> N^${qtd}\n`;
+                txt += `\tSe n ≠ 0, ${opNome}(n, ...) realiza a operação definida.\n`;
+                
+                // Exemplo Teste
+                txt += `\t${testeNome}: N^${qtd} -> {Verdadeiro, Falso}\n`;
+                txt += `\t${testeNome}(n, ...) retorna Verdadeiro se a condição for satisfeita.\n`;
+            }
+
+            return txt;
+        }
+    </script>
+</body>
+</html>
