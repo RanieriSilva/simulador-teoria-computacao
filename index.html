@@ -180,8 +180,8 @@
             background-color: #7f8c8d;
         }
 
-        /* Área de Programa (Passo 3) */
-        #program-list {
+        /* Área de Programa (Passo 3) e Trace (Passo 4) */
+        #program-list, #computation-trace {
             list-style: none;
             padding: 0;
             border: 1px solid #ccc;
@@ -189,7 +189,7 @@
             min-height: 100px;
             margin-bottom: 20px;
         }
-        #program-list li {
+        #program-list li, #computation-trace li {
             padding: 10px 15px;
             border-bottom: 1px dashed #eee;
             display: flex;
@@ -197,7 +197,7 @@
             align-items: center;
             font-family: 'Courier New', Courier, monospace;
         }
-        #program-list li:last-child {
+        #program-list li:last-child, #computation-trace li:last-child {
             border-bottom: none;
         }
         .inst-label {
@@ -234,12 +234,36 @@
             line-height: 1.5;
             border: 2px solid #34495e;
         }
+        
+        #final-memory-output {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #e9ecef;
+            color: #333;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .memory-state {
+            color: #3498db;
+            font-weight: bold;
+        }
 
         .error {
             color: #e74c3c;
             font-size: 0.85rem;
             display: none;
             margin-top: 5px;
+        }
+        
+        .input-reg-values {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .input-reg-values > div {
+            flex: 1;
+            min-width: 100px;
         }
     </style>
 </head>
@@ -288,7 +312,7 @@
         <div id="step-3" class="step-container">
             <h2>Passo 3: Definição do Programa Monolítico</h2>
             
-            <div class="section-title">Instruções do Programa</div>
+            <div class="section-title">Instruções do Programa (Rotulado)</div>
             <ul id="program-list">
                 <!-- Instruções serão adicionadas aqui -->
             </ul>
@@ -324,14 +348,42 @@
 
             <div style="display: flex; gap: 10px; margin-top: 30px;">
                 <button class="btn-action btn-secondary" onclick="voltarParaPasso2()" style="width: 30%;">Voltar</button>
-                <button class="btn-action" onclick="gerarMaquinaFinal()">Finalizar e Simular</button>
+                <button class="btn-action" onclick="irParaPasso4()">Próximo: Simular Computação</button>
             </div>
+        </div>
+
+        <!-- PASSO 4: Simulação da Computação -->
+        <div id="step-4" class="step-container">
+            <h2>Passo 4: Definição da Computação</h2>
+            <p style="font-size: 0.9rem; color: #666;">Insira os valores iniciais para os registradores de **Entrada** e execute.</p>
+            
+            <div class="section-title">Valores de Entrada</div>
+            <div class="input-reg-values" id="input-values-container">
+                <!-- Inputs de valor inicial gerados dinamicamente -->
+            </div>
+            
+            <div id="sim-error" class="inst-error"></div>
+
+            <button class="btn-action" onclick="executarSimulacao()">Computar Execução</button>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn-action btn-secondary" onclick="voltarParaPasso3()" style="width: 30%;">Voltar</button>
+                <button class="btn-action" onclick="irParaResultadoFinal()">Gerar Texto Formal</button>
+            </div>
+            
+            <div class="section-title" style="margin-top: 40px;">Rastreamento da Computação (Trace)</div>
+            <ul id="computation-trace">
+                <li style="justify-content: center; color: #888;">Execute a simulação para ver o rastreamento.</li>
+            </ul>
+            
+            <div class="section-title">Resultado Final da Memória</div>
+            <div id="final-memory-output">Aguardando Execução...</div>
         </div>
 
         <!-- RESULTADO FINAL -->
         <div id="step-result" class="step-container">
             <h2>Máquina e Programa Definidos</h2>
-            <p>Abaixo está a representação textual formal da sua máquina e programa:</p>
+            <p>Abaixo está a representação textual formal completa da sua máquina e programa.</p>
             <div id="resultado-final"></div>
             <button class="btn-action" onclick="location.reload()">Criar Nova Máquina</button>
         </div>
@@ -344,10 +396,11 @@
             qtd: 0,
             entrada: [],
             saida: [],
-            operacoes: {}, // { 'A': { val: 'inc', text: 'Incremento (++)' }, ... }
-            testes: {}     // { 'A': { val: 'zero', text: 'Igual a 0 (= 0)' }, ... }
+            operacoes: {}, // { 'A': { val: 'inc', text: 'Incremento (++)', funcName: 'inc_a' }, ... }
+            testes: {}     // { 'A': { val: 'zero', text: 'Igual a 0 (= 0)', funcName: 'a_zero' }, ... }
         };
         let programa = []; // Armazena as instruções do programa
+        const MAX_STEPS = 1000; // Limite para evitar loop infinito na simulação
 
         /* --- CONSTANTES DE OPÇÕES --- */
         const OPCOES_OPERACOES = [
@@ -367,11 +420,38 @@
         const step1 = document.getElementById('step-1');
         const step2 = document.getElementById('step-2');
         const step3 = document.getElementById('step-3');
+        const step4 = document.getElementById('step-4');
         const stepResult = document.getElementById('step-result');
         const inputQtd = document.getElementById('qtdRegistradores');
         
+        /* --- FUNÇÕES AUXILIARES DE NOMEAÇÃO --- */
+
+        function mapearNomeOperacao(op, reg) {
+            switch(op) {
+                case 'add': return `adiciona_${reg.toLowerCase()}`;
+                case 'sub': return `subtrai_${reg.toLowerCase()}`;
+                case 'mult': return `multiplica_${reg.toLowerCase()}`;
+                case 'div': return `divide_${reg.toLowerCase()}`;
+                case 'mod': return `mod_${reg.toLowerCase()}`;
+                case 'inc': return `inc_${reg.toLowerCase()}`;
+                case 'dec': return `dec_${reg.toLowerCase()}`;
+                default: return `op_${reg.toLowerCase()}`;
+            }
+        }
+
+        function mapearNomeTeste(test, reg) {
+            switch(test) {
+                case 'zero': return `${reg.toLowerCase()}_zero`;
+                case 'gt0': return `${reg.toLowerCase()}_maior_zero`;
+                case 'lt0': return `${reg.toLowerCase()}_menor_zero`;
+                case 'neq0': return `${reg.toLowerCase()}_dif_zero`;
+                case 'gte0': return `${reg.toLowerCase()}_maior_igual_zero`;
+                case 'lte0': return `${reg.toLowerCase()}_menor_igual_zero`;
+                default: return `teste_${reg.toLowerCase()}`;
+            }
+        }
+
         /* --- PASSO 1 LÓGICA --- */
-        // ... (Mesma lógica do passo 1) ...
         inputQtd.addEventListener('input', function() {
             const qtd = parseInt(this.value);
             const errorDiv = document.getElementById('error-qtd');
@@ -388,6 +468,7 @@
         });
 
         function gerarCheckboxes(qtd) {
+            // ... (Lógica de checkboxes mantida)
             const containerEntrada = document.getElementById('container-entrada');
             const containerSaida = document.getElementById('container-saida');
             containerEntrada.innerHTML = '';
@@ -410,6 +491,7 @@
         /* --- PASSO 2 LÓGICA --- */
 
         function irParaPasso2() {
+            // ... (Lógica de irParaPasso2 mantida)
             const qtd = parseInt(inputQtd.value);
             const entradas = Array.from(document.querySelectorAll('input[name="entrada"]:checked')).map(cb => cb.value);
             const saidas = Array.from(document.querySelectorAll('input[name="saida"]:checked')).map(cb => cb.value);
@@ -430,6 +512,7 @@
         }
 
         function gerarInterfaceFuncoes(qtd) {
+            // ... (Lógica de gerarInterfaceFuncoes mantida)
             const container = document.getElementById('container-funcoes');
             container.innerHTML = '';
 
@@ -525,6 +608,7 @@
         }
 
         function toggleLabelInputs() {
+            // ... (Lógica de toggleLabelInputs mantida)
             const type = document.getElementById('inst-type').value;
             const labelInputsDiv = document.getElementById('label-inputs');
             
@@ -554,6 +638,7 @@
         }
 
         function addInstruction() {
+            // ... (Lógica de addInstruction mantida)
             const instError = document.getElementById('inst-error');
             instError.innerText = '';
 
@@ -582,7 +667,7 @@
 
             if (type === 'T') {
                 dest1 = parseInt(document.getElementById('inst-dest-false').value); // FALSO
-                dest2 = parseInt(document.getElementById('inst-dest-true').value);  // VERDADEIRO
+                dest2 = parseInt(document.getElementById('inst-dest-true').value);  // VERDADEIRO (Note: a lógica formal é se VAI para TRUE/FALSO)
 
                 if (isNaN(dest1) || isNaN(dest2) || dest1 < 1 || dest2 < 1) {
                     instError.innerText = "Rótulos de destino (Falso e Verdadeiro) devem ser números inteiros positivos.";
@@ -624,6 +709,7 @@
         }
 
         function renderProgramList() {
+            // ... (Lógica de renderProgramList mantida)
             const ul = document.getElementById('program-list');
             ul.innerHTML = '';
 
@@ -652,76 +738,291 @@
                 ul.appendChild(li);
             });
         }
-
-        /* --- GERAÇÃO FINAL DO TEXTO (Passo 4) --- */
         
-        function gerarMaquinaFinal() {
-            // 1. Validação de Rótulos (Opcional, mas importante: HALT)
-            const todosOsDestinos = programa.flatMap(inst => {
-                if (inst.type === 'T') return [inst.destFalse, inst.destTrue];
-                return [inst.dest];
+        /* --- PASSO 4 LÓGICA (Simulação) --- */
+
+        function irParaPasso4() {
+             if (programa.length === 0) {
+                document.getElementById('inst-error').innerText = "Adicione pelo menos uma instrução ao programa antes de simular.";
+                return;
+            }
+            
+            // 1. Gera Inputs para Valores de Entrada
+            const container = document.getElementById('input-values-container');
+            container.innerHTML = '';
+            maquinaConfig.entrada.forEach(reg => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label for="input-reg-${reg}">Reg. ${reg}</label>
+                    <input type="number" id="input-reg-${reg}" min="0" value="0" placeholder="Valor inicial">
+                `;
+                container.appendChild(div);
             });
+            if (maquinaConfig.entrada.length === 0) {
+                 container.innerHTML = '<p style="color: #666;">Não há registradores de entrada definidos (Passo 1). Todos os registradores começarão com zero.</p>';
+            }
 
-            const rotulosExistentes = new Set(programa.map(inst => inst.label));
 
-            // Checar se o HALT (Rótulo 99, por exemplo) está sendo usado, ou se todos os
-            // destinos levam a rótulos válidos. Vamos simplificar assumindo que qualquer rótulo
-            // que não existe é o HALT, mas avisando o usuário.
+            // 2. Troca de tela
+            step3.classList.remove('active');
+            step4.classList.add('active');
+        }
+        
+        function voltarParaPasso3() {
+            step4.classList.remove('active');
+            step3.classList.add('active');
+        }
 
-            // 2. Montar Texto Formal (Máquina)
+        function _getMemoryState() {
+            let state = {};
+            for (let i = 0; i < maquinaConfig.qtd; i++) {
+                const reg = String.fromCharCode(65 + i);
+                state[reg] = 0;
+            }
+            return state;
+        }
+
+        function _applyOperation(reg, opVal, memory) {
+            let value = memory[reg];
+            let result = value;
+
+            // As operações aqui devem seguir as regras formais (geralmente em N, números naturais)
+            // No nosso simulador, vamos garantir que o resultado seja >= 0 (clamp)
+
+            switch(opVal) {
+                case 'add': result = value + 1; break; // Simplificação: R(i) <- R(i) + 1 (Adiciona)
+                case 'sub': result = Math.max(0, value - 1); break; // Simplificação: R(i) <- R(i) - 1 (Subtrai, com proteção contra negativo)
+                case 'inc': result = value + 1; break;
+                case 'dec': result = Math.max(0, value - 1); break;
+                
+                // Para operações mais complexas, assumimos que elas operam em R[reg]
+                // e precisam de um segundo registrador implícito ou um valor constante.
+                // Como não definimos o segundo operando, simplificamos:
+                case 'mult': result = value * 2; break; // Ex: Multiplica por 2
+                case 'div': result = Math.floor(value / 2); break; // Ex: Divide por 2 (inteiro)
+                case 'mod': result = value % 2; break; // Ex: Módulo por 2
+                default: break;
+            }
+            
+            memory[reg] = result;
+        }
+
+        function _evaluateTest(reg, testVal, memory) {
+            const value = memory[reg];
+
+            switch(testVal) {
+                case 'zero': return value === 0;
+                case 'gt0': return value > 0;
+                case 'lt0': return value < 0; // Se N, sempre Falso
+                case 'gte0': return value >= 0; // Se N, sempre Verdadeiro
+                case 'lte0': return value <= 0;
+                case 'neq0': return value !== 0;
+                default: return false;
+            }
+        }
+
+        function executarSimulacao() {
+            const simError = document.getElementById('sim-error');
+            const traceList = document.getElementById('computation-trace');
+            const outputDiv = document.getElementById('final-memory-output');
+            
+            simError.innerText = '';
+            traceList.innerHTML = '';
+            outputDiv.innerText = 'Executando...';
+
+            // 1. Inicializar Memória (Todos a 0)
+            let memory = _getMemoryState();
+            
+            // 2. Aplicar Valores de Entrada
+            let inputValues = [];
+            for (const reg of maquinaConfig.entrada) {
+                const inputElement = document.getElementById(`input-reg-${reg}`);
+                const value = parseInt(inputElement.value);
+                
+                if (isNaN(value) || value < 0) {
+                    simError.innerText = `Valor de entrada inválido para Reg. ${reg}. Deve ser um número inteiro não-negativo.`;
+                    return;
+                }
+                memory[reg] = value;
+                inputValues.push(value);
+            }
+            
+            // Mapear Programa para Busca Rápida
+            const programMap = new Map();
+            programa.forEach(inst => programMap.set(inst.label, inst));
+
+            // 3. Inicializar Simulação
+            let P = programa.length > 0 ? programa[0].label : null; // Rótulo inicial
+            const trace = [];
+            let steps = 0;
+            const regLetters = Array.from({length: maquinaConfig.qtd}, (_, i) => String.fromCharCode(65 + i));
+
+            // Log inicial (Computar - (P, (R[A], R[B]...)))
+            const initialMemState = regLetters.map(r => memory[r]);
+            trace.push({
+                label: P,
+                memory: [...initialMemState],
+                comment: `instrução inicial e valor de entrada armazenado (${inputValues.join(',')})`
+            });
+            
+            // 4. Loop de Execução
+            while (P !== null && programMap.has(P) && steps < MAX_STEPS) {
+                const instruction = programMap.get(P);
+                const reg = instruction.reg;
+                let nextP = null;
+                let comment = '';
+
+                if (instruction.type === 'O') {
+                    // Instrução de Operação (Faça...)
+                    const op = maquinaConfig.operacoes[reg];
+                    
+                    comment = `em ${P}, faça ${op.text} no registrador ${reg} e desviou para ${instruction.dest}`;
+                    _applyOperation(reg, op.val, memory);
+                    nextP = instruction.dest;
+
+                } else if (instruction.type === 'T') {
+                    // Instrução de Teste (Se... Então... Senão...)
+                    const test = maquinaConfig.testes[reg];
+                    const result = _evaluateTest(reg, test.val, memory);
+
+                    if (result) {
+                        nextP = instruction.destTrue;
+                        comment = `em ${P}, Se ${test.text} em ${reg} for VERDADEIRO, desviou para ${nextP}`;
+                    } else {
+                        nextP = instruction.destFalse;
+                        comment = `em ${P}, Se ${test.text} em ${reg} for FALSO, desviou para ${nextP}`;
+                    }
+                } else {
+                    // Rótulo inválido no map, deve ser HALT se o P for um destino.
+                    break;
+                }
+
+                P = nextP;
+                steps++;
+
+                const currentMemState = regLetters.map(r => memory[r]);
+                trace.push({
+                    label: P,
+                    memory: [...currentMemState],
+                    comment: comment
+                });
+            }
+
+            // 5. Finalizar Simulação
+            if (steps >= MAX_STEPS) {
+                simError.innerText = `Simulação interrompida após ${MAX_STEPS} passos para evitar loop infinito.`;
+            }
+
+            // 6. Exibir Trace
+            traceList.innerHTML = '';
+            
+            // Cria um Map para mapear rótulos para comentários de execução (para o exemplo)
+            const executionComments = {
+                [trace[0].label]: 'instrução inicial e valor de entrada armazenado'
+            };
+
+            trace.forEach((step, index) => {
+                const li = document.createElement('li');
+                const memString = step.memory.join(',');
+                const traceOutput = `( <span class="inst-label">${step.label}</span>, (<span class="memory-state">${memString}</span>) )`;
+                
+                // Limita a descrição para ser mais concisa
+                const desc = index === 0 ? step.comment : step.comment.replace(`em ${trace[index-1].label}, `, '').replace('no registrador', 'em R').replace('e desviou para', '->');
+                
+                li.innerHTML = `${traceOutput} <span style="font-size: 0.85rem; color: #666;">// ${desc}</span>`;
+                traceList.appendChild(li);
+            });
+            
+            // 7. Exibir Saída Final
+            const finalRegs = regLetters.join(' ');
+            const finalValues = regLetters.map(r => memory[r]).join(' ');
+            const regsSaida = maquinaConfig.saida.join(' ');
+            const saidaValues = maquinaConfig.saida.map(r => memory[r]).join(' ');
+
+            outputDiv.innerHTML = `
+                <p>Função Computada: HALT no rótulo ${P}.</p>
+                <p>Valores finais da Memória: (${finalRegs})</p>
+                <p style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${finalValues}</p>
+                
+                ${maquinaConfig.saida.length > 0 ? 
+                    `<p>Valores de Saída: (${regsSaida})</p>
+                    <p style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${saidaValues}</p>`
+                    : '<p>Nenhum registrador de saída definido.</p>'
+                }
+            `;
+            
+            // Guarda o trace para o resultado final
+            maquinaConfig.trace = trace; 
+        }
+
+        /* --- GERAÇÃO FINAL DO TEXTO (Passo Resultado) --- */
+        
+        function irParaResultadoFinal() {
+             // 1. Montar Texto Formal (Máquina)
             const textoMaquina = construirTextoFormal();
 
-            // 3. Montar Texto do Programa
+            // 2. Montar Texto do Programa
             let textoPrograma = `\n\nPROGRAMA:\n`;
             
             if (programa.length === 0) {
-                textoPrograma += "Nenhum programa definido. A máquina irá parar imediatamente.";
+                textoPrograma += "Nenhum programa definido.";
             } else {
                  programa.forEach(inst => {
                     if (inst.type === 'T') {
-                        // Ex: 1: Se a_zero então vá_para 9 senão va_para 2
                         textoPrograma += `${inst.label}: Se ${inst.action.funcName} então vá_para ${inst.destTrue} senão vá_para ${inst.destFalse}\n`;
                     } else {
-                        // Ex: 2: faça subtrai_a vá_para 3
                         textoPrograma += `${inst.label}: faça ${inst.action.funcName} vá_para ${inst.dest}\n`;
                     }
                 });
             }
             
-            document.getElementById('resultado-final').innerText = textoMaquina + textoPrograma;
+            // 3. Montar Texto da Computação (Trace)
+            let textoComputacao = '';
+            if (maquinaConfig.trace && maquinaConfig.trace.length > 0) {
+                const regLetters = Array.from({length: maquinaConfig.qtd}, (_, i) => String.fromCharCode(65 + i));
+                const finalValues = regLetters.map(r => maquinaConfig.trace[maquinaConfig.trace.length - 1].memory[regLetters.indexOf(r)]).join(' ');
+                const regsSaida = maquinaConfig.saida.join(' ');
+                
+                textoComputacao += `\n\nCOMPUTAÇÃO:\n`;
+                
+                // Títulos de colunas de entrada
+                textoComputacao += `Valores de entrada: ${maquinaConfig.entrada.join(' ')}\n`;
+                if (maquinaConfig.trace[0].memory.length > 0) {
+                    // Assume que a entrada é mapeada para os primeiros registradores
+                    const initialInput = maquinaConfig.trace[0].memory.slice(0, maquinaConfig.entrada.length).join(' ');
+                    textoComputacao += `\t\t\t\t ${initialInput}\n`;
+                }
+
+                // Trace
+                maquinaConfig.trace.forEach((step, index) => {
+                    const memString = step.memory.join(',');
+                    const traceOutput = `(${step.label}, (${memString}))`;
+                    const comment = index === 0 ? step.comment : step.comment;
+                    textoComputacao += `${traceOutput}\t // ${comment}\n`;
+                });
+                
+                // Saída
+                const finalSaidaValues = maquinaConfig.saida.map(r => finalValues.split(' ')[regLetters.indexOf(r)]).join(' ');
+                
+                textoComputacao += `\nfunção computada\n`;
+                textoComputacao += `valores de saída \t ${regLetters.join(' ')}\n`;
+                textoComputacao += `\t\t\t\t ${finalValues}\n`;
+                if (maquinaConfig.saida.length > 0) {
+                    textoComputacao += `(Registradores de Saída: ${regsSaida})\n`;
+                    textoComputacao += `\t\t\t\t ${finalSaidaValues}\n`;
+                }
+
+            } else {
+                textoComputacao = "\n\nCOMPUTAÇÃO:\nSimulação não executada.";
+            }
             
-            step3.classList.remove('active');
+            document.getElementById('resultado-final').innerText = textoMaquina + textoPrograma + textoComputacao;
+            
+            step4.classList.remove('active');
             stepResult.classList.add('active');
         }
 
-        /* --- HELPER FUNCTIONS PARA O TEXTO FORMAL (REPETIÇÃO DO PASSO 2) --- */
-
-        function mapearNomeOperacao(op, reg) {
-            // Retorna nomes como 'adiciona_a', 'subtrai_b' baseados na seleção
-            switch(op) {
-                case 'add': return `adiciona_${reg.toLowerCase()}`;
-                case 'sub': return `subtrai_${reg.toLowerCase()}`;
-                case 'mult': return `multiplica_${reg.toLowerCase()}`;
-                case 'div': return `divide_${reg.toLowerCase()}`;
-                case 'mod': return `mod_${reg.toLowerCase()}`;
-                case 'inc': return `inc_${reg.toLowerCase()}`;
-                case 'dec': return `dec_${reg.toLowerCase()}`;
-                default: return `op_${reg.toLowerCase()}`;
-            }
-        }
-
-        function mapearNomeTeste(test, reg) {
-            switch(test) {
-                case 'zero': return `${reg.toLowerCase()}_zero`;
-                case 'gt0': return `${reg.toLowerCase()}_maior_zero`;
-                case 'lt0': return `${reg.toLowerCase()}_menor_zero`;
-                case 'neq0': return `${reg.toLowerCase()}_dif_zero`;
-                case 'gte0': return `${reg.toLowerCase()}_maior_igual_zero`;
-                case 'lte0': return `${reg.toLowerCase()}_menor_igual_zero`;
-                default: return `teste_${reg.toLowerCase()}`;
-            }
-        }
-
+        /* --- HELPER FUNCTIONS PARA O TEXTO FORMAL (TUPLA DE DEFINIÇÃO) --- */
         function construirTextoFormal() {
             const qtd = maquinaConfig.qtd;
             const regsEntrada = maquinaConfig.entrada.length;
@@ -738,12 +1039,13 @@
             }
 
             // 2. Montagem do Texto Principal
-            let txt = `maquina_${qtd}regs = (N^${qtd}, N^${regsEntrada || 0}, N^${regsSaida || 0}, entrada_func, saida_func, (${listaOps.join(', ')}), (${listaTestes.join(', ')}))\n\n`;
+            let txt = `MAQUINA DE REGISTRADORES (Formal):\n`;
+            txt += `M = (N^${qtd}, N^${regsEntrada || 0}, N^${regsSaida || 0}, entrada_func, saida_func, (${listaOps.join(', ')}), (${listaTestes.join(', ')}))\n\n`;
             
             txt += `ONDE:\n`;
-            txt += `\tN^${qtd} é o conjunto de valores de memória (registradores A..${String.fromCharCode(64+qtd)})\n`;
-            txt += `\tN^${regsEntrada} é o conjunto de valores de entrada (${maquinaConfig.entrada.join(',')})\n`;
-            txt += `\tN^${regsSaida} é o conjunto de valores de saída (${maquinaConfig.saida.join(',')})\n\n`;
+            txt += `\tN^${qtd} é o conjunto de valores de memória (registradores R[A]..R[${String.fromCharCode(64+qtd)}])\n`;
+            txt += `\tN^${regsEntrada} é o conjunto de valores de entrada (Registradores ${maquinaConfig.entrada.join(',')})\n`;
+            txt += `\tN^${regsSaida} é o conjunto de valores de saída (Registradores ${maquinaConfig.saida.join(',')})\n\n`;
 
             txt += `DEFINIÇÕES DE ENTRADA E SAÍDA:\n`;
             // Descrição genérica da entrada
