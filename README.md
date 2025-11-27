@@ -37,7 +37,7 @@ Ao concluir a simulação, o sistema gera:
 1. **Clone o repositório**
 
    ```bash
-   git clone https://github.com/seuusuario/seurepo.git
+   git clone https://github.com/RanieriSilva/simulador-teoria-computacao
    ```
 
 2. **Abra o arquivo principal**
@@ -126,11 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 ## 💡 Conceito da Máquina de Registradores
 
-A Máquina de Registradores é um modelo formal equivalente às Máquinas de Turing, onde a computação ocorre por meio de:
-
-* Registradores que armazenam valores naturais
-* Instruções monolíticas de teste e operação
-* Controle sequencial definido por rótulos
+A Máquina de Registradores é um modelo formal equivalente às Máquinas de Turing (Monolitico).
 
 O simulador implementa exatamente esse comportamento, exibindo a evolução dos registradores e do **Program Counter (PC)** ao longo da execução.
 
