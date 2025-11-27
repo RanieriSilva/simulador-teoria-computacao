@@ -37,6 +37,7 @@
             font-size: 1.2rem;
             color: #2980b9;
             margin-top: 0;
+            margin-bottom: 15px;
         }
 
         .step-container {
@@ -74,13 +75,23 @@
             font-weight: 600;
         }
 
-        input[type="number"] {
+        input[type="number"], select, input[type="text"] {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 1rem;
             box-sizing: border-box;
+            background-color: white;
+        }
+        
+        .row-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .row-form > div {
+            flex: 1;
         }
 
         /* Estilos para Checkboxes (Passo 1) */
@@ -103,10 +114,6 @@
 
         .checkbox-item input {
             margin-right: 8px;
-        }
-
-        .checkbox-item:hover {
-            background-color: #d5dbdb;
         }
 
         /* Estilos para Seleção de Funções (Passo 2) */
@@ -136,14 +143,6 @@
             min-width: 200px;
         }
 
-        select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #bdc3c7;
-            background-color: white;
-        }
-
         /* Botões */
         .btn-action {
             background-color: #27ae60;
@@ -163,12 +162,63 @@
             background-color: #2ecc71;
         }
 
+        .btn-add-inst {
+            background-color: #3498db;
+            margin-top: 0;
+            padding: 10px 15px;
+        }
+
+        .btn-add-inst:hover {
+            background-color: #5dade2;
+        }
+
         .btn-secondary {
             background-color: #95a5a6;
             margin-top: 10px;
         }
         .btn-secondary:hover {
             background-color: #7f8c8d;
+        }
+
+        /* Área de Programa (Passo 3) */
+        #program-list {
+            list-style: none;
+            padding: 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            min-height: 100px;
+            margin-bottom: 20px;
+        }
+        #program-list li {
+            padding: 10px 15px;
+            border-bottom: 1px dashed #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #program-list li:last-child {
+            border-bottom: none;
+        }
+        .inst-label {
+            font-weight: bold;
+            color: #e67e22;
+            margin-right: 10px;
+        }
+        .btn-remove {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .inst-error {
+            color: #e74c3c;
+            font-size: 0.85rem;
+            margin-top: 5px;
         }
 
         /* Área de Resultado Final */
@@ -196,7 +246,7 @@
 <body>
 
     <div class="container">
-        <h1>Definição da Máquina</h1>
+        <h1>Simulador de Máquina de Registradores</h1>
 
         <!-- PASSO 1: Configuração Básica -->
         <div id="step-1" class="step-container active">
@@ -222,7 +272,7 @@
         <!-- PASSO 2: Operações e Testes -->
         <div id="step-2" class="step-container">
             <h2>Passo 2: Funções e Testes</h2>
-            <p style="font-size: 0.9rem; color: #666;">Defina a operação matemática e o teste lógico para cada registrador.</p>
+            <p style="font-size: 0.9rem; color: #666;">Defina a operação e o teste padrão para cada registrador.</p>
             
             <div id="container-funcoes">
                 <!-- Linhas geradas dinamicamente -->
@@ -230,14 +280,58 @@
 
             <div style="display: flex; gap: 10px;">
                 <button class="btn-action btn-secondary" onclick="voltarParaPasso1()" style="width: 30%;">Voltar</button>
-                <button class="btn-action" onclick="gerarMaquinaFinal()">Gerar Máquina</button>
+                <button class="btn-action" onclick="irParaPasso3()">Próximo: Definir Programa</button>
+            </div>
+        </div>
+        
+        <!-- PASSO 3: Definição do Programa -->
+        <div id="step-3" class="step-container">
+            <h2>Passo 3: Definição do Programa Monolítico</h2>
+            
+            <div class="section-title">Instruções do Programa</div>
+            <ul id="program-list">
+                <!-- Instruções serão adicionadas aqui -->
+            </ul>
+
+            <div class="section-title">Adicionar Nova Instrução</div>
+            <div class="row-form">
+                <div style="max-width: 80px;">
+                    <label for="inst-label">Rótulo</label>
+                    <input type="number" id="inst-label" min="1" placeholder="Ex: 1">
+                </div>
+                <div>
+                    <label for="inst-type">Tipo</label>
+                    <select id="inst-type" onchange="toggleLabelInputs()">
+                        <option value="T">Teste (Se... Então... Senão...)</option>
+                        <option value="O">Operação (Faça...)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="inst-reg">Registrador Alvo</label>
+                    <select id="inst-reg">
+                        <!-- Opções preenchidas pelo JS -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="row-form" id="label-inputs">
+                <!-- Campos de Rótulo de Destino (Varia entre O e T) -->
+            </div>
+            
+            <div id="inst-error" class="inst-error"></div>
+
+            <button class="btn-action btn-add-inst" onclick="addInstruction()">Adicionar Instrução</button>
+
+            <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <button class="btn-action btn-secondary" onclick="voltarParaPasso2()" style="width: 30%;">Voltar</button>
+                <button class="btn-action" onclick="gerarMaquinaFinal()">Finalizar e Simular</button>
             </div>
         </div>
 
         <!-- RESULTADO FINAL -->
         <div id="step-result" class="step-container">
-            <h2>Máquina Definida</h2>
-            <p>Abaixo está a representação textual formal da sua máquina:</p>
+            <h2>Máquina e Programa Definidos</h2>
+            <p>Abaixo está a representação textual formal da sua máquina e programa:</p>
             <div id="resultado-final"></div>
             <button class="btn-action" onclick="location.reload()">Criar Nova Máquina</button>
         </div>
@@ -250,17 +344,34 @@
             qtd: 0,
             entrada: [],
             saida: [],
-            operacoes: {}, // { 'A': 'soma', ... }
-            testes: {}     // { 'A': 'zero', ... }
+            operacoes: {}, // { 'A': { val: 'inc', text: 'Incremento (++)' }, ... }
+            testes: {}     // { 'A': { val: 'zero', text: 'Igual a 0 (= 0)' }, ... }
         };
+        let programa = []; // Armazena as instruções do programa
+
+        /* --- CONSTANTES DE OPÇÕES --- */
+        const OPCOES_OPERACOES = [
+            { val: 'add', text: 'Soma (+)' }, { val: 'sub', text: 'Subtração (-)' },
+            { val: 'mult', text: 'Multiplicação (*)' }, { val: 'div', text: 'Divisão (/)' },
+            { val: 'mod', text: 'Módulo (%)' }, { val: 'inc', text: 'Incremento (++)' },
+            { val: 'dec', text: 'Decremento (--)' }
+        ];
+
+        const OPCOES_TESTES = [
+            { val: 'zero', text: 'Igual a 0 (= 0)' }, { val: 'gt0', text: 'Maior que 0 (> 0)' },
+            { val: 'lt0', text: 'Menor que 0 (< 0)' }, { val: 'gte0', text: 'Maior ou Igual a 0 (>= 0)' },
+            { val: 'lte0', text: 'Menor ou Igual a 0 (<= 0)' }, { val: 'neq0', text: 'Diferente de 0 (!= 0)' }
+        ];
 
         /* --- ELEMENTOS DOM --- */
         const step1 = document.getElementById('step-1');
         const step2 = document.getElementById('step-2');
+        const step3 = document.getElementById('step-3');
         const stepResult = document.getElementById('step-result');
         const inputQtd = document.getElementById('qtdRegistradores');
         
-        /* --- PASSO 1 LOGICA --- */
+        /* --- PASSO 1 LÓGICA --- */
+        // ... (Mesma lógica do passo 1) ...
         inputQtd.addEventListener('input', function() {
             const qtd = parseInt(this.value);
             const errorDiv = document.getElementById('error-qtd');
@@ -296,6 +407,8 @@
             return label;
         }
 
+        /* --- PASSO 2 LÓGICA --- */
+
         function irParaPasso2() {
             const qtd = parseInt(inputQtd.value);
             const entradas = Array.from(document.querySelectorAll('input[name="entrada"]:checked')).map(cb => cb.value);
@@ -305,6 +418,8 @@
             maquinaConfig.qtd = qtd;
             maquinaConfig.entrada = entradas;
             maquinaConfig.saida = saidas;
+            maquinaConfig.operacoes = {};
+            maquinaConfig.testes = {};
 
             // Gera interface do passo 2
             gerarInterfaceFuncoes(qtd);
@@ -313,27 +428,6 @@
             step1.classList.remove('active');
             step2.classList.add('active');
         }
-
-        /* --- PASSO 2 LOGICA --- */
-        
-        const OPCOES_OPERACOES = [
-            { val: 'add', text: 'Soma (+)' },
-            { val: 'sub', text: 'Subtração (-)' },
-            { val: 'mult', text: 'Multiplicação (*)' },
-            { val: 'div', text: 'Divisão (/)' },
-            { val: 'mod', text: 'Módulo (%)' },
-            { val: 'inc', text: 'Incremento (++)' },
-            { val: 'dec', text: 'Decremento (--)' }
-        ];
-
-        const OPCOES_TESTES = [
-            { val: 'zero', text: 'Igual a 0 (= 0)' },
-            { val: 'gt0', text: 'Maior que 0 (> 0)' },
-            { val: 'lt0', text: 'Menor que 0 (< 0)' },
-            { val: 'gte0', text: 'Maior ou Igual a 0 (>= 0)' },
-            { val: 'lte0', text: 'Menor ou Igual a 0 (<= 0)' },
-            { val: 'neq0', text: 'Diferente de 0 (!= 0)' }
-        ];
 
         function gerarInterfaceFuncoes(qtd) {
             const container = document.getElementById('container-funcoes');
@@ -388,27 +482,219 @@
             step1.classList.add('active');
         }
 
-        function gerarMaquinaFinal() {
-            // Captura as seleções
+        /* --- PASSO 3 LÓGICA (Definição do Programa) --- */
+
+        function irParaPasso3() {
+            // 1. Captura e Salva Funções
             for (let i = 0; i < maquinaConfig.qtd; i++) {
                 const letra = String.fromCharCode(65 + i);
-                const op = document.getElementById(`op_${letra}`).value;
-                const test = document.getElementById(`test_${letra}`).value;
-                
-                // Mapeia valores 'clean' para nomes matemáticos para o texto final
-                maquinaConfig.operacoes[letra] = mapearNomeOperacao(op, letra);
-                maquinaConfig.testes[letra] = mapearNomeTeste(test, letra);
+                const opSelect = document.getElementById(`op_${letra}`);
+                const testSelect = document.getElementById(`test_${letra}`);
+
+                maquinaConfig.operacoes[letra] = {
+                    val: opSelect.value, 
+                    text: opSelect.options[opSelect.selectedIndex].text,
+                    funcName: mapearNomeOperacao(opSelect.value, letra)
+                };
+                maquinaConfig.testes[letra] = {
+                    val: testSelect.value, 
+                    text: testSelect.options[testSelect.selectedIndex].text,
+                    funcName: mapearNomeTeste(testSelect.value, letra)
+                };
             }
 
-            const textoFinal = construirTextoFormal();
+            // 2. Preenche Registradores disponíveis para Programação
+            const instRegSelect = document.getElementById('inst-reg');
+            instRegSelect.innerHTML = '';
+            for (let i = 0; i < maquinaConfig.qtd; i++) {
+                const letra = String.fromCharCode(65 + i);
+                instRegSelect.innerHTML += `<option value="${letra}">${letra}</option>`;
+            }
             
-            document.getElementById('resultado-final').innerText = textoFinal;
-            
+            // 3. Renderiza a parte de rótulos (padrão é Teste)
+            toggleLabelInputs();
+
+            // 4. Troca de tela
             step2.classList.remove('active');
+            step3.classList.add('active');
+        }
+
+        function voltarParaPasso2() {
+            step3.classList.remove('active');
+            step2.classList.add('active');
+        }
+
+        function toggleLabelInputs() {
+            const type = document.getElementById('inst-type').value;
+            const labelInputsDiv = document.getElementById('label-inputs');
+            
+            if (type === 'T') { // Teste
+                labelInputsDiv.innerHTML = `
+                    <div class="row-form">
+                        <div>
+                            <label for="inst-dest-false">Rótulo Destino (Senão/Falso)</label>
+                            <input type="number" id="inst-dest-false" min="1" placeholder="Ex: 2">
+                        </div>
+                        <div>
+                            <label for="inst-dest-true">Rótulo Destino (Então/Verdadeiro)</label>
+                            <input type="number" id="inst-dest-true" min="1" placeholder="Ex: 9">
+                        </div>
+                    </div>
+                `;
+            } else { // Operação
+                labelInputsDiv.innerHTML = `
+                    <div class="row-form">
+                        <div>
+                            <label for="inst-dest-op">Rótulo Destino (Próxima)</label>
+                            <input type="number" id="inst-dest-op" min="1" placeholder="Ex: 3">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function addInstruction() {
+            const instError = document.getElementById('inst-error');
+            instError.innerText = '';
+
+            const label = parseInt(document.getElementById('inst-label').value);
+            const type = document.getElementById('inst-type').value;
+            const reg = document.getElementById('inst-reg').value;
+            
+            if (isNaN(label) || label < 1) {
+                instError.innerText = "Rótulo inválido. Deve ser um número inteiro positivo.";
+                return;
+            }
+
+            // Checa se o rótulo já existe
+            if (programa.some(inst => inst.label === label)) {
+                instError.innerText = `O rótulo ${label} já foi utilizado. Escolha outro.`;
+                return;
+            }
+
+            let instruction = {
+                label: label,
+                type: type, // 'T' ou 'O'
+                reg: reg
+            };
+            
+            let dest1, dest2;
+
+            if (type === 'T') {
+                dest1 = parseInt(document.getElementById('inst-dest-false').value); // FALSO
+                dest2 = parseInt(document.getElementById('inst-dest-true').value);  // VERDADEIRO
+
+                if (isNaN(dest1) || isNaN(dest2) || dest1 < 1 || dest2 < 1) {
+                    instError.innerText = "Rótulos de destino (Falso e Verdadeiro) devem ser números inteiros positivos.";
+                    return;
+                }
+                
+                instruction.destFalse = dest1;
+                instruction.destTrue = dest2;
+                instruction.action = maquinaConfig.testes[reg];
+
+            } else { // Operação 'O'
+                dest1 = parseInt(document.getElementById('inst-dest-op').value);
+
+                if (isNaN(dest1) || dest1 < 1) {
+                    instError.innerText = "Rótulo de destino deve ser um número inteiro positivo.";
+                    return;
+                }
+
+                instruction.dest = dest1;
+                instruction.action = maquinaConfig.operacoes[reg];
+            }
+
+            programa.push(instruction);
+            // Ordena o programa por rótulo
+            programa.sort((a, b) => a.label - b.label); 
+            
+            renderProgramList();
+            
+            // Limpa o formulário (deixa apenas o rótulo em branco)
+            document.getElementById('inst-label').value = '';
+            document.getElementById('inst-type').value = 'T';
+            toggleLabelInputs(); // Reseta os campos de destino
+            document.getElementById('inst-reg').selectedIndex = 0;
+        }
+
+        function removeInstruction(labelToRemove) {
+            programa = programa.filter(inst => inst.label !== labelToRemove);
+            renderProgramList();
+        }
+
+        function renderProgramList() {
+            const ul = document.getElementById('program-list');
+            ul.innerHTML = '';
+
+            if (programa.length === 0) {
+                ul.innerHTML = '<li style="justify-content: center; color: #888;">Nenhuma instrução adicionada.</li>';
+                return;
+            }
+
+            programa.forEach(inst => {
+                const li = document.createElement('li');
+                
+                let desc;
+                if (inst.type === 'T') {
+                    // Ex: 1: Se a_zero então vá_para 9 senão va_para 2
+                    desc = `Se **${inst.action.funcName}** (Reg ${inst.reg}) então vá_para ${inst.destTrue} senão vá_para ${inst.destFalse}`;
+                } else {
+                    // Ex: 2: faça subtrai_a vá_para 3
+                    desc = `Faça **${inst.action.funcName}** (Reg ${inst.reg}) vá_para ${inst.dest}`;
+                }
+
+                li.innerHTML = `
+                    <span class="inst-label">${inst.label}:</span>
+                    <span>${desc}</span>
+                    <button class="btn-remove" onclick="removeInstruction(${inst.label})">✕</button>
+                `;
+                ul.appendChild(li);
+            });
+        }
+
+        /* --- GERAÇÃO FINAL DO TEXTO (Passo 4) --- */
+        
+        function gerarMaquinaFinal() {
+            // 1. Validação de Rótulos (Opcional, mas importante: HALT)
+            const todosOsDestinos = programa.flatMap(inst => {
+                if (inst.type === 'T') return [inst.destFalse, inst.destTrue];
+                return [inst.dest];
+            });
+
+            const rotulosExistentes = new Set(programa.map(inst => inst.label));
+
+            // Checar se o HALT (Rótulo 99, por exemplo) está sendo usado, ou se todos os
+            // destinos levam a rótulos válidos. Vamos simplificar assumindo que qualquer rótulo
+            // que não existe é o HALT, mas avisando o usuário.
+
+            // 2. Montar Texto Formal (Máquina)
+            const textoMaquina = construirTextoFormal();
+
+            // 3. Montar Texto do Programa
+            let textoPrograma = `\n\nPROGRAMA:\n`;
+            
+            if (programa.length === 0) {
+                textoPrograma += "Nenhum programa definido. A máquina irá parar imediatamente.";
+            } else {
+                 programa.forEach(inst => {
+                    if (inst.type === 'T') {
+                        // Ex: 1: Se a_zero então vá_para 9 senão va_para 2
+                        textoPrograma += `${inst.label}: Se ${inst.action.funcName} então vá_para ${inst.destTrue} senão vá_para ${inst.destFalse}\n`;
+                    } else {
+                        // Ex: 2: faça subtrai_a vá_para 3
+                        textoPrograma += `${inst.label}: faça ${inst.action.funcName} vá_para ${inst.dest}\n`;
+                    }
+                });
+            }
+            
+            document.getElementById('resultado-final').innerText = textoMaquina + textoPrograma;
+            
+            step3.classList.remove('active');
             stepResult.classList.add('active');
         }
 
-        /* --- HELPER FUNCTIONS PARA O TEXTO --- */
+        /* --- HELPER FUNCTIONS PARA O TEXTO FORMAL (REPETIÇÃO DO PASSO 2) --- */
 
         function mapearNomeOperacao(op, reg) {
             // Retorna nomes como 'adiciona_a', 'subtrai_b' baseados na seleção
@@ -430,6 +716,8 @@
                 case 'gt0': return `${reg.toLowerCase()}_maior_zero`;
                 case 'lt0': return `${reg.toLowerCase()}_menor_zero`;
                 case 'neq0': return `${reg.toLowerCase()}_dif_zero`;
+                case 'gte0': return `${reg.toLowerCase()}_maior_igual_zero`;
+                case 'lte0': return `${reg.toLowerCase()}_menor_igual_zero`;
                 default: return `teste_${reg.toLowerCase()}`;
             }
         }
@@ -439,17 +727,17 @@
             const regsEntrada = maquinaConfig.entrada.length;
             const regsSaida = maquinaConfig.saida.length;
             
-            // Listas de funções para a tupla principal
+            // 1. Listas de funções para a tupla principal
             const listaOps = [];
             const listaTestes = [];
             
             for(let i=0; i<qtd; i++) {
                 let l = String.fromCharCode(65+i);
-                listaOps.push(maquinaConfig.operacoes[l]);
-                listaTestes.push(maquinaConfig.testes[l]);
+                listaOps.push(maquinaConfig.operacoes[l].funcName);
+                listaTestes.push(maquinaConfig.testes[l].funcName);
             }
 
-            // Montagem do Texto
+            // 2. Montagem do Texto Principal
             let txt = `maquina_${qtd}regs = (N^${qtd}, N^${regsEntrada || 0}, N^${regsSaida || 0}, entrada_func, saida_func, (${listaOps.join(', ')}), (${listaTestes.join(', ')}))\n\n`;
             
             txt += `ONDE:\n`;
@@ -474,9 +762,7 @@
 
             // Descrição genérica da saída
             if (regsSaida > 0) {
-                // Criar variáveis n1, n2... para representar a memória
                 const varsMemoria = Array.from({length: qtd}, (_, i) => `n${i+1}`).join(',');
-                // Mapear quais dessas variáveis são saída
                 const varsSaida = maquinaConfig.saida.map(r => {
                     let index = r.charCodeAt(0) - 65;
                     return `n${index+1}`;
@@ -488,24 +774,25 @@
                 txt += `\tsaida_func: N/A (Sem registradores de saída definidos)\n\n`;
             }
 
-            txt += `INTERPRETAÇÕES (EXEMPLOS):\n`;
-            // Exibe a definição matemática para o primeiro registrador como exemplo
-            const rExemplo = 'A';
-            if (qtd > 0) {
-                const opNome = maquinaConfig.operacoes['A'];
-                const testeNome = maquinaConfig.testes['A'];
+            txt += `INTERPRETAÇÕES (ESCOLHAS DO USUÁRIO):\n`;
+            for(let i=0; i<qtd; i++) {
+                let l = String.fromCharCode(65+i);
                 
-                // Exemplo Operação
-                txt += `\t${opNome}: N^${qtd} -> N^${qtd}\n`;
-                txt += `\tSe n ≠ 0, ${opNome}(n, ...) realiza a operação definida.\n`;
+                // Operação
+                txt += `\t${maquinaConfig.operacoes[l].funcName} (Op. em R[${l}]): \t${maquinaConfig.operacoes[l].text}\n`;
                 
-                // Exemplo Teste
-                txt += `\t${testeNome}: N^${qtd} -> {Verdadeiro, Falso}\n`;
-                txt += `\t${testeNome}(n, ...) retorna Verdadeiro se a condição for satisfeita.\n`;
+                // Teste
+                txt += `\t${maquinaConfig.testes[l].funcName} (Teste em R[${l}]): \t${maquinaConfig.testes[l].text}\n`;
             }
 
             return txt;
         }
+
+        // Garante que o estado inicial está correto ao carregar a página
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleLabelInputs(); // Garante que a interface do Passo 3 está no estado inicial de Teste
+            step1.classList.add('active'); // Garante que o Passo 1 é exibido
+        });
     </script>
 </body>
 </html>
